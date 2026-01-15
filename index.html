@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physics Formula Master Pro</title>
+    <title>Physics Formula Master</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
@@ -18,12 +18,10 @@
             margin: 1rem 0;
             border: 2px solid #e2e8f0;
             padding: 15px;
-            cursor: pointer;
             transition: border-color 0.2s;
         }
-        .latex-display:hover { border-color: #cbd5e1; }
         .input-target-active {
-            outline: 2px solid #3b82f6;
+            outline: 3px solid #3b82f6;
             background: #eff6ff !important;
         }
         .option-btn {
@@ -45,7 +43,7 @@
     <div class="max-w-2xl mx-auto px-4 py-8">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-slate-900">物理公式パズル</h1>
-            <p class="text-slate-500 text-sm">記号をタップして公式を組み立てよう（順不同対応）</p>
+            <p class="text-slate-500 text-sm">公式の構成要素を正しく並べましょう</p>
         </header>
 
         <main id="quiz-container" class="bg-white rounded-2xl shadow-xl p-6 mb-6 hidden border border-slate-100">
@@ -65,15 +63,15 @@
                 <button id="btn-clear" class="absolute top-2 right-2 text-xs bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100 font-bold">リセット</button>
             </div>
 
-            <!-- Enhanced Controls -->
-            <div class="grid grid-cols-3 gap-2 mb-6">
+            <!-- Controls -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
                 <button id="ctrl-base" class="bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm">通常</button>
                 <button id="ctrl-frac" class="bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm">分数</button>
                 <button id="ctrl-pow" class="bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm">累乗</button>
             </div>
             
-            <div id="sub-controls" class="hidden grid grid-cols-2 gap-2 mb-6 animate-pulse">
-                <button id="btn-target-1" class="bg-blue-100 text-blue-700 py-2 rounded-lg text-xs font-bold border-2 border-blue-300">分子 / ベース</button>
+            <div id="sub-controls" class="hidden grid grid-cols-2 gap-2 mb-4">
+                <button id="btn-target-1" class="bg-blue-500 text-white py-2 rounded-lg text-xs font-bold border-2 border-blue-300">分子 / ベース</button>
                 <button id="btn-target-2" class="bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-bold border-2 border-transparent">分母 / 指数</button>
             </div>
 
@@ -88,7 +86,7 @@
         </main>
 
         <div id="status-message" class="text-center p-12 bg-white rounded-2xl shadow-md border border-slate-100">
-            <p class="text-lg animate-pulse">読み込み中...</p>
+            <p id="status-text" class="text-lg">JSONファイルを読み込んでいます...</p>
         </div>
 
         <!-- Result Modal -->
@@ -97,7 +95,7 @@
                 <div id="modal-icon" class="text-6xl mb-4"></div>
                 <h3 id="modal-title" class="text-2xl font-bold mb-2"></h3>
                 <p id="modal-body" class="text-slate-500 mb-6"></p>
-                <div id="modal-correct-ans" class="mb-6 text-lg font-serif bg-slate-50 p-4 rounded-xl border border-slate-100"></div>
+                <div id="modal-correct-ans" class="mb-6 text-lg bg-slate-50 p-4 rounded-xl border border-slate-100"></div>
                 <button id="btn-next" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-blue-500">次へ進む</button>
             </div>
         </div>
@@ -106,20 +104,21 @@
     <script>
         let quizzes = [];
         let currentIndex = 0;
-        
         // 状態管理
-        let state = {
-            base: [],       // 通常入力のID配列
-            numerator: [],  // 分子のID配列
-            denominator: [],// 分母のID配列
-            power: [],      // 累乗のID配列
-            mode: 'base',   // 'base', 'frac', 'pow'
-            target: 1       // 1 (base/num), 2 (den/pow)
+        let state = { 
+            base_pre: [],    // 分数/累乗より前に入力した記号
+            base_post: [],   // 分数/累乗より後に入力した記号
+            numerator: [], 
+            denominator: [], 
+            power: [], 
+            mode: 'base', 
+            target: 1 
         };
 
         const elements = {
             container: document.getElementById('quiz-container'),
             status: document.getElementById('status-message'),
+            statusText: document.getElementById('status-text'),
             title: document.getElementById('quiz-title'),
             desc: document.getElementById('quiz-description'),
             progress: document.getElementById('quiz-progress'),
@@ -142,15 +141,23 @@
             ctrlPow: document.getElementById('ctrl-pow')
         };
 
-        async function loadQuizzes() {
+        async function init() {
             try {
+                // Fetch JSON without fallback data in JS
                 const response = await fetch('physics_quiz.json');
+                if (!response.ok) throw new Error("File not found or invalid response");
                 const data = await response.json();
                 quizzes = data.quizzes;
                 initQuiz();
-            } catch (error) {
-                elements.status.innerHTML = `<p class="text-red-500 font-bold">データが見つかりません</p>`;
-                console.error(error);
+            } catch (e) {
+                elements.statusText.innerHTML = `
+                    <span class="text-red-500 font-bold block mb-2">エラー: JSONファイルを読み込めませんでした。</span>
+                    <span class="text-sm text-slate-500 text-left block">
+                        ・physics_quiz.json がこのHTMLと同じフォルダにあるか確認してください。<br>
+                        ・ブラウザのセキュリティ設定により、ローカルファイルを直接開くと制限される場合があります。
+                    </span>
+                `;
+                console.error(e);
             }
         }
 
@@ -183,12 +190,18 @@
         }
 
         function addSymbol(opt) {
-            if (state.mode === 'base') state.base.push(opt.id);
-            else if (state.mode === 'frac') {
+            if (state.mode === 'base') {
+                // 特殊な入力モードが一度でも使われた後は後方に、そうでなければ前方に
+                if (state.numerator.length > 0 || state.denominator.length > 0 || state.power.length > 0) {
+                    state.base_post.push(opt.id);
+                } else {
+                    state.base_pre.push(opt.id);
+                }
+            } else if (state.mode === 'frac') {
                 if (state.target === 1) state.numerator.push(opt.id);
                 else state.denominator.push(opt.id);
             } else if (state.mode === 'pow') {
-                if (state.target === 1) state.base.push(opt.id);
+                if (state.target === 1) state.base_pre.push(opt.id);
                 else state.power.push(opt.id);
             }
             updateDisplay();
@@ -196,45 +209,46 @@
 
         function updateDisplay() {
             let latex = "";
+            const preStr = state.base_pre.map(id => getLabel(id)).join('');
+            const postStr = state.base_post.map(id => getLabel(id)).join('');
             
-            // Base rendering
-            const bStr = state.base.map(id => getLabel(id)).join('');
-            latex += bStr;
+            latex += preStr;
 
-            // Power rendering
+            // Power
             if (state.mode === 'pow' || state.power.length > 0) {
-                const pStr = state.power.length > 0 ? state.power.map(id => getLabel(id)).join('') : (state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
+                const pStr = state.power.length > 0 ? state.power.map(id => getLabel(id)).join('') : (state.mode === 'pow' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
                 latex += `^{${pStr}}`;
             }
 
-            // Fraction rendering
+            // Fraction
             if (state.mode === 'frac' || state.numerator.length > 0 || state.denominator.length > 0) {
                 const nStr = state.numerator.length > 0 ? state.numerator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 1 ? '\\color{blue}{\\square}' : '\\square');
                 const dStr = state.denominator.length > 0 ? state.denominator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
                 latex += `\\frac{${nStr}}{${dStr}}`;
             }
 
+            latex += postStr;
+
             elements.display.innerHTML = `\\( ${latex || '\\text{入力してください}'} \\)`;
             MathJax.typesetPromise([elements.display]);
         }
 
         function getLabel(id) {
-            // 特殊ID
-            if (id === 'div') return '/';
-            if (id === 'pow') return '^';
             const quiz = quizzes[currentIndex];
             const opt = quiz.options.find(o => o.id === id);
             return opt ? opt.label : id;
         }
 
-        // --- Mode Controls ---
         function setMode(mode) {
             state.mode = mode;
             state.target = 1;
             
-            elements.ctrlBase.className = mode === 'base' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
-            elements.ctrlFrac.className = mode === 'frac' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
-            elements.ctrlPow.className = mode === 'pow' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
+            const activeClass = "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
+            const inactiveClass = "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
+            
+            elements.ctrlBase.className = mode === 'base' ? activeClass : inactiveClass;
+            elements.ctrlFrac.className = mode === 'frac' ? activeClass : inactiveClass;
+            elements.ctrlPow.className = mode === 'pow' ? activeClass : inactiveClass;
 
             if (mode === 'base') {
                 elements.subControls.classList.add('hidden');
@@ -250,8 +264,10 @@
         }
 
         function updateSubTargets() {
-            elements.btnT1.className = state.target === 1 ? "bg-blue-500 text-white py-2 rounded-lg text-xs font-bold border-2 border-blue-300 shadow-inner" : "bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-bold border-2 border-transparent";
-            elements.btnT2.className = state.target === 2 ? "bg-blue-500 text-white py-2 rounded-lg text-xs font-bold border-2 border-blue-300 shadow-inner" : "bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-bold border-2 border-transparent";
+            const activeSub = "bg-blue-500 text-white py-2 rounded-lg text-xs font-bold border-2 border-blue-300 shadow-inner";
+            const inactiveSub = "bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-bold border-2 border-transparent";
+            elements.btnT1.className = state.target === 1 ? activeSub : inactiveSub;
+            elements.btnT2.className = state.target === 2 ? activeSub : inactiveSub;
         }
 
         elements.ctrlBase.onclick = () => setMode('base');
@@ -262,54 +278,44 @@
         elements.btnClear.onclick = resetState;
 
         function resetState() {
-            state = { base: [], numerator: [], denominator: [], power: [], mode: 'base', target: 1 };
+            state = { base_pre: [], base_post: [], numerator: [], denominator: [], power: [], mode: 'base', target: 1 };
             setMode('base');
             updateDisplay();
         }
 
-        // --- Judge Logic ---
         elements.btnSubmit.onclick = () => {
             const quiz = quizzes[currentIndex];
             const ans = quiz.answer_structure;
-
-            // ユーザー入力を等号で分割（簡易実装のため、等号はbaseに含まれる前提）
-            // 実際はもっと複雑な構造が必要だが、リクエストに基づき「項の順序」を判定
             
-            const isMatch = checkStructureMatch(state, ans);
-            showModal(isMatch);
+            // ユーザー入力を単一配列にマージ（判定用）
+            const userIDs = [
+                ...state.base_pre, 
+                ...state.numerator, 
+                ...state.denominator, 
+                ...state.power,
+                ...state.base_post
+            ].filter(id => id !== 'equal').sort();
+
+            // 正解のIDをマージ
+            const correctIDs = [
+                ...ans.left, 
+                ...ans.right
+            ].filter(id => id !== 'div' && id !== 'pow' && id !== 'equal').sort();
+
+            const isCorrect = JSON.stringify(userIDs) === JSON.stringify(correctIDs);
+            showModal(isCorrect);
         };
-
-        function checkStructureMatch(user, correct) {
-            // 全てのIDを一つの配列に集めて、順序を無視して比較する（掛け算の場合など）
-            // より厳密には左辺・右辺に分ける必要がある
-            const getNormalized = (arr) => arr.filter(id => id !== 'equal').sort().join('|');
-
-            // 簡易的な「等号」位置での分割とソート比較
-            // ここではユーザーが組み立てた全パーツ(ID)が、正解の全パーツと一致するかで判定
-            const userAll = [...user.base, ...user.numerator, ...user.denominator, ...user.power].sort().join('|');
-            const correctAll = [...correct.left, ...correct.right].sort().join('|');
-
-            return userAll === correctAll;
-        }
 
         function showModal(isCorrect) {
             elements.modalIcon.textContent = isCorrect ? '✨' : '⚠️';
-            elements.modalTitle.textContent = isCorrect ? '正解！' : '確認しましょう';
-            elements.modalBody.textContent = isCorrect ? '公式の構造を正しく理解しています。' : '記号の組み合わせや累乗の場所を確認してください。';
+            elements.modalTitle.textContent = isCorrect ? '正解！' : '惜しい！';
+            elements.modalBody.textContent = isCorrect ? '素晴らしい理解度です。' : '記号の不足や、位置が正しいか確認しましょう。';
             
-            // 正解例の表示
+            // 正解ラベルの構築（簡易）
             const quiz = quizzes[currentIndex];
-            const left = quiz.answer_structure.left.map(id => getLabel(id)).join('');
-            const right = quiz.answer_structure.right.map(id => {
-                if (id === 'div') return ''; // 構造的フラグ
-                return getLabel(id);
-            }).join('');
-            
-            // 簡易的に構築（実際はJSONに正解文字列を持たせるのがベスト）
-            elements.modalAns.innerHTML = `公式: \\( ${left} = ${right} \\)`;
+            elements.modalAns.innerHTML = `公式の確認を完了しました`;
             
             elements.modal.classList.remove('hidden');
-            MathJax.typesetPromise([elements.modalAns]);
         }
 
         elements.btnNext.onclick = () => {
@@ -319,11 +325,10 @@
         };
 
         function showFinal() {
-            elements.container.innerHTML = `<div class="text-center py-12"><h2 class="text-4xl font-black mb-4">COMPLETE!</h2><button onclick="location.reload()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold">もう一度</button></div>`;
+            elements.container.innerHTML = `<div class="text-center py-12"><h2 class="text-4xl font-black mb-4">全問クリア！</h2><button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg">もう一度挑戦</button></div>`;
         }
 
-        window.onload = loadQuizzes;
+        init();
     </script>
 </body>
 </html>
-
