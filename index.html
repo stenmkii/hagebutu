@@ -8,7 +8,7 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         .latex-display {
-            min-height: 80px;
+            min-height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -17,14 +17,20 @@
             border-radius: 0.5rem;
             margin: 1rem 0;
             border: 2px dashed #cbd5e1;
+            padding: 10px;
         }
         .fraction-input-active {
             border: 2px solid #3b82f6 !important;
             background: #eff6ff !important;
+            color: #1d4ed8 !important;
         }
         .option-btn {
             transition: all 0.2s;
             touch-action: manipulation;
+            min-width: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .option-btn:active {
             transform: scale(0.95);
@@ -36,13 +42,13 @@
     <div class="max-w-2xl mx-auto px-4 py-8">
         <header class="text-center mb-8">
             <h1 class="text-3xl font-bold text-slate-900">物理公式パズル</h1>
-            <p class="text-slate-600">記号を組み合わせて正しい公式を完成させよう</p>
+            <p class="text-slate-600">記号を正しく組み合わせて公式を完成させてください</p>
         </header>
 
         <!-- Quiz Container -->
         <main id="quiz-container" class="bg-white rounded-xl shadow-lg p-6 mb-6 hidden">
             <div class="flex justify-between items-center mb-4">
-                <span id="quiz-category" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">Category</span>
+                <span id="quiz-category" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">力学・電磁気・原子</span>
                 <span id="quiz-progress" class="text-sm font-medium text-slate-500">1 / 10</span>
             </div>
             
@@ -52,31 +58,31 @@
             <!-- Input Area -->
             <div class="mb-6">
                 <div class="flex justify-between items-end mb-2">
-                    <span class="text-xs font-bold uppercase text-slate-400">あなたの回答</span>
-                    <button id="btn-clear" class="text-xs text-red-500 hover:text-red-700 font-bold underline">リセット</button>
+                    <span class="text-xs font-bold uppercase text-slate-400">作成中の式</span>
+                    <button id="btn-clear" class="text-xs text-red-500 hover:text-red-700 font-bold underline">やり直す</button>
                 </div>
                 <div id="current-formula-display" class="latex-display">
-                    \[ \]
+                    \( \)
                 </div>
             </div>
 
             <!-- Controls -->
             <div class="grid grid-cols-2 gap-4 mb-6">
-                <button id="btn-fraction" class="bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-700 flex items-center justify-center gap-2">
-                    <span class="text-xl">÷</span> 分数入力
+                <button id="btn-fraction" class="bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-700">
+                    分数入力パネルを開く
                 </button>
                 <div id="fraction-controls" class="hidden grid grid-cols-2 gap-2">
-                    <button id="btn-num" class="bg-blue-500 text-white py-1 rounded-md text-sm font-bold fraction-input-active">分子</button>
-                    <button id="btn-den" class="bg-blue-500 text-white py-1 rounded-md text-sm font-bold">分母</button>
+                    <button id="btn-num" class="bg-blue-100 text-blue-600 py-1 border-2 border-transparent rounded-md text-sm font-bold">分子へ入力</button>
+                    <button id="btn-den" class="bg-blue-100 text-blue-600 py-1 border-2 border-transparent rounded-md text-sm font-bold">分母へ入力</button>
                 </div>
                 <button id="btn-submit" class="bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-500">
-                    解答する
+                    これで判定！
                 </button>
             </div>
 
             <!-- Options -->
             <div class="border-t pt-4">
-                <p class="text-xs font-bold uppercase text-slate-400 mb-3">記号パネル</p>
+                <p class="text-xs font-bold uppercase text-slate-400 mb-3">記号を選択</p>
                 <div id="options-grid" class="flex flex-wrap gap-2">
                     <!-- Buttons will be injected here -->
                 </div>
@@ -85,15 +91,16 @@
 
         <!-- Loading / Message State -->
         <div id="status-message" class="text-center p-12 bg-white rounded-xl shadow-md">
-            <p class="text-lg">読み込み中...</p>
+            <p class="text-lg">問題を読み込み中...</p>
         </div>
 
-        <!-- Result Modal (Simple) -->
+        <!-- Result Modal -->
         <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center px-4 z-50">
             <div class="bg-white rounded-xl p-8 max-w-sm w-full text-center">
                 <div id="modal-icon" class="text-5xl mb-4"></div>
                 <h3 id="modal-title" class="text-2xl font-bold mb-2"></h3>
                 <p id="modal-body" class="text-slate-600 mb-6"></p>
+                <div id="modal-correct-ans" class="mb-4 text-sm bg-slate-50 p-2 rounded hidden"></div>
                 <button id="btn-next" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold">次へ進む</button>
             </div>
         </div>
@@ -102,11 +109,10 @@
     <script>
         let quizzes = [];
         let currentIndex = 0;
-        let userInput = []; // 記号の配列
+        let userInput = []; 
         
-        // 分数入力用ステート
         let isFractionMode = false;
-        let fractionTarget = 'num'; // 'num' or 'den'
+        let fractionTarget = 'num'; 
         let currentNumerator = [];
         let currentDenominator = [];
 
@@ -128,20 +134,19 @@
             modalIcon: document.getElementById('modal-icon'),
             modalTitle: document.getElementById('modal-title'),
             modalBody: document.getElementById('modal-body'),
+            modalAns: document.getElementById('modal-correct-ans'),
             btnNext: document.getElementById('btn-next')
         };
 
         // --- Data Loading ---
         async function loadQuizzes() {
             try {
-                // Fetch from the generated json file
                 const response = await fetch('physics_quiz.json');
                 const data = await response.json();
                 quizzes = data.quizzes;
                 initQuiz();
             } catch (error) {
-                elements.status.innerHTML = `<p class="text-red-500">データの読み込みに失敗しました。</p>`;
-                console.error(error);
+                elements.status.innerHTML = `<p class="text-red-500">JSONデータの読み込みに失敗しました。ファイル名を確認してください。</p>`;
             }
         }
 
@@ -168,11 +173,16 @@
             elements.optionsGrid.innerHTML = '';
             options.forEach(opt => {
                 const btn = document.createElement('button');
-                btn.className = 'option-btn bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-md font-mono text-lg';
-                btn.textContent = opt;
+                btn.className = 'option-btn bg-white border border-slate-300 hover:bg-slate-50 px-3 py-2 rounded-md';
+                // 選択肢もLaTeXとして表示
+                btn.innerHTML = `\\(${opt}\\)`;
                 btn.onclick = () => addSymbol(opt);
                 elements.optionsGrid.appendChild(btn);
             });
+            // 選択肢ボタンのレンダリングを依頼
+            if (window.MathJax) {
+                MathJax.typesetPromise([elements.optionsGrid]);
+            }
         }
 
         function addSymbol(symbol) {
@@ -190,16 +200,15 @@
 
         function updateDisplay() {
             let latex = buildLatexString(userInput, currentNumerator, currentDenominator, isFractionMode, fractionTarget);
-            elements.display.innerHTML = `\\[ ${latex} \\]`;
+            elements.display.innerHTML = `\\( ${latex} \\)`;
             
-            // Re-render MathJax
             if (window.MathJax) {
                 MathJax.typesetPromise([elements.display]);
             }
         }
 
         function buildLatexString(base, num, den, fracMode, target) {
-            let str = base.join(' ');
+            let str = base.join('');
             if (fracMode) {
                 let nStr = num.length > 0 ? num.join('') : (target === 'num' ? '\\color{blue}{\\square}' : '\\square');
                 let dStr = den.length > 0 ? den.join('') : (target === 'den' ? '\\color{blue}{\\square}' : '\\square');
@@ -220,6 +229,8 @@
             currentDenominator = [];
             elements.fractionControls.classList.add('hidden');
             elements.btnFraction.classList.remove('hidden');
+            elements.btnNum.classList.remove('fraction-input-active');
+            elements.btnDen.classList.remove('fraction-input-active');
         }
 
         // --- Handlers ---
@@ -229,7 +240,6 @@
             elements.btnFraction.classList.add('hidden');
             elements.fractionControls.classList.remove('hidden');
             elements.btnNum.classList.add('fraction-input-active');
-            elements.btnDen.classList.remove('fraction-input-active');
             updateDisplay();
         };
 
@@ -250,31 +260,61 @@
         elements.btnClear.onclick = resetInput;
 
         elements.btnSubmit.onclick = () => {
-            // 合成して判定
+            // 入力式を合成
             let finalFormula = userInput.join('');
             if (currentNumerator.length > 0 || currentDenominator.length > 0) {
-                finalFormula += currentNumerator.join('') + '/' + currentDenominator.join('');
+                finalFormula += `\\frac{${currentNumerator.join('')}}{${currentDenominator.join('')}}`;
             }
             
-            // 正誤判定 (スペースや中括弧を無視する簡易的な正規化)
-            const quiz = quizzes[currentIndex];
-            const cleanAnswer = quiz.answer.replace(/\s/g, '').replace(/\{|\}/g, '');
-            const cleanUser = finalFormula.replace(/\s/g, '').replace(/\{|\}/g, '');
-
-            if (cleanUser === cleanAnswer) {
-                showModal(true);
-            } else {
-                showModal(false);
-            }
+            checkAnswer(finalFormula);
         };
 
+        function checkAnswer(userLatex) {
+            const quiz = quizzes[currentIndex];
+            
+            // 正規化関数：スペース、中括弧、バックスラッシュの重複などを除去
+            const normalize = (s) => s.replace(/\s/g, '').replace(/\{/g, '').replace(/\}/g, '').replace(/\\/g, '');
+
+            // 等号で分割して左辺と右辺を取得
+            const userParts = userLatex.split('=');
+            const answerParts = quiz.answer.split('=');
+
+            let isCorrect = false;
+
+            if (userParts.length === 2 && answerParts.length === 2) {
+                const u1 = normalize(userParts[0]);
+                const u2 = normalize(userParts[1]);
+                const a1 = normalize(answerParts[0]);
+                const a2 = normalize(answerParts[1]);
+
+                // 順番が一致している、または左右が入れ替わっている
+                if ((u1 === a1 && u2 === a2) || (u1 === a2 && u2 === a1)) {
+                    isCorrect = true;
+                }
+            } else {
+                // 等号がない場合などは単純比較
+                if (normalize(userLatex) === normalize(quiz.answer)) {
+                    isCorrect = true;
+                }
+            }
+
+            showModal(isCorrect);
+        }
+
         function showModal(isCorrect) {
-            elements.modalIcon.textContent = isCorrect ? '🎉' : '❌';
-            elements.modalTitle.textContent = isCorrect ? '正解！' : '残念...';
+            elements.modalIcon.textContent = isCorrect ? '🎉' : '🤔';
+            elements.modalTitle.textContent = isCorrect ? '正解です！' : '惜しい！';
             elements.modalBody.textContent = isCorrect 
-                ? '完璧です！その調子で次も頑張りましょう。' 
-                : `正解は ${quizzes[currentIndex].answer} でした。`;
+                ? '完璧に組み立てられました。' 
+                : 'もう一度公式を確認してみましょう。';
+            
+            elements.modalAns.classList.remove('hidden');
+            elements.modalAns.innerHTML = `正解例: \\(${quizzes[currentIndex].answer}\\)`;
+            
             elements.modal.classList.remove('hidden');
+            if (window.MathJax) {
+                MathJax.typesetPromise([elements.modalAns]);
+            }
         }
 
         elements.btnNext.onclick = () => {
@@ -286,10 +326,10 @@
         function showFinalResults() {
             elements.container.innerHTML = `
                 <div class="text-center py-8">
-                    <h2 class="text-3xl font-bold mb-4">全問終了！</h2>
-                    <p class="mb-6 text-slate-600">お疲れ様でした。これで公式マスターです。</p>
+                    <h2 class="text-3xl font-bold mb-4">全問クリア！</h2>
+                    <p class="mb-6 text-slate-600">物理公式の形をしっかり覚えられましたね。</p>
                     <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold">
-                        最初からやり直す
+                        もう一度挑戦
                     </button>
                 </div>
             `;
