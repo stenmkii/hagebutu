@@ -5,13 +5,13 @@
 "title": "コンプトン効果 (波長の長波長化)",
 "description": "散乱光の波長変化を表す公式を完成させてください。",
 "options": [
-{"id": "lp", "label": "\lambda'"},
-{"id": "l", "label": "\lambda"},
+{"id": "lp", "label": "\\lambda'"},
+{"id": "l", "label": "\\lambda"},
 {"id": "h", "label": "h"},
 {"id": "m", "label": "m"},
 {"id": "c", "label": "c"},
 {"id": "1", "label": "1"},
-{"id": "cos", "label": "\cos \phi"},
+{"id": "cos", "label": "\\cos \\phi"},
 {"id": "lpren", "label": "("},
 {"id": "rpren", "label": ")"},
 {"id": "minus", "label": "-"},
@@ -29,9 +29,9 @@
 "options": [
 {"id": "2", "label": "2"},
 {"id": "d", "label": "d"},
-{"id": "sin", "label": "\sin \theta"},
+{"id": "sin", "label": "\\sin \\theta"},
 {"id": "n", "label": "n"},
-{"id": "l", "label": "\lambda"},
+{"id": "l", "label": "\\lambda"},
 {"id": "equal", "label": "="}
 ],
 "answer_structure": {
@@ -57,3 +57,4 @@
 }
 ]
 }
+
