@@ -1,0 +1,46 @@
+{
+"quizzes": [
+{
+"id": "compton",
+"title": "コンプトン効果 (波長の長波長化)",
+"description": "散乱光の波長変化を表す公式を完成させてください。",
+"options": ["\\lambda'", "\\lambda", "h", "m", "c", "1", "\\cos \\phi", "(", ")", "-", "=", "/"],
+"answer": "\\lambda'-\\lambda=h/mc(1-\\cos \\phi)"
+},
+{
+"id": "bragg",
+"title": "ブラッグの反射条件",
+"description": "結晶格子によるX線回折の条件式を完成させてください。",
+"options": ["2", "d", "\\sin \\theta", "n", "\\lambda", "=", "m", "v"],
+"answer": "2d\\sin \\theta=n\\lambda"
+},
+{
+"id": "bohr_quantization",
+"title": "ボーアの量子条件",
+"description": "原子内の電子の角運動量に関する量子条件を完成させてください。",
+"options": ["m", "v", "r", "n", "h", "2", "\\pi", "=", "/"],
+"answer": "mvr=nh/2\\pi"
+},
+{
+"id": "rydberg",
+"title": "リュードベリの公式",
+"description": "水素原子のスペクトル系列を表す式を完成させてください。",
+"options": ["1", "\\lambda", "R", "a", "n", "2", "-", "=", "(", ")", "/", "m"],
+"answer": "1/\\lambda=R(1/a^2-1/n^2)"
+},
+{
+"id": "half_life",
+"title": "半減期の式",
+"description": "放射性原子核の崩壊による残存数を表す式を完成させてください。",
+"options": ["N", "N_0", "1", "2", "t", "T", "=", "(", ")", "/"],
+"answer": "N=N_0(1/2)^{t/T}"
+},
+{
+"id": "relativity",
+"title": "質量とエネルギーの等価性",
+"description": "特殊相対性理論におけるエネルギーの式を完成させてください。",
+"options": ["E", "m", "c", "2", "=", "h", "v"],
+"answer": "E=mc^2"
+}
+]
+}

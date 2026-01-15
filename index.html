@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Formula Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        .latex-display {
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border: 2px dashed #cbd5e1;
+        }
+        .fraction-input-active {
+            border: 2px solid #3b82f6 !important;
+            background: #eff6ff !important;
+        }
+        .option-btn {
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        .option-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
+
+    <div class="max-w-2xl mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-900">物理公式パズル</h1>
+            <p class="text-slate-600">記号を組み合わせて正しい公式を完成させよう</p>
+        </header>
+
+        <!-- Quiz Container -->
+        <main id="quiz-container" class="bg-white rounded-xl shadow-lg p-6 mb-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <span id="quiz-category" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">Category</span>
+                <span id="quiz-progress" class="text-sm font-medium text-slate-500">1 / 10</span>
+            </div>
+            
+            <h2 id="quiz-title" class="text-xl font-bold mb-2"></h2>
+            <p id="quiz-description" class="text-slate-600 text-sm mb-4"></p>
+
+            <!-- Input Area -->
+            <div class="mb-6">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-xs font-bold uppercase text-slate-400">あなたの回答</span>
+                    <button id="btn-clear" class="text-xs text-red-500 hover:text-red-700 font-bold underline">リセット</button>
+                </div>
+                <div id="current-formula-display" class="latex-display">
+                    \[ \]
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <button id="btn-fraction" class="bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-700 flex items-center justify-center gap-2">
+                    <span class="text-xl">÷</span> 分数入力
+                </button>
+                <div id="fraction-controls" class="hidden grid grid-cols-2 gap-2">
+                    <button id="btn-num" class="bg-blue-500 text-white py-1 rounded-md text-sm font-bold fraction-input-active">分子</button>
+                    <button id="btn-den" class="bg-blue-500 text-white py-1 rounded-md text-sm font-bold">分母</button>
+                </div>
+                <button id="btn-submit" class="bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-500">
+                    解答する
+                </button>
+            </div>
+
+            <!-- Options -->
+            <div class="border-t pt-4">
+                <p class="text-xs font-bold uppercase text-slate-400 mb-3">記号パネル</p>
+                <div id="options-grid" class="flex flex-wrap gap-2">
+                    <!-- Buttons will be injected here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading / Message State -->
+        <div id="status-message" class="text-center p-12 bg-white rounded-xl shadow-md">
+            <p class="text-lg">読み込み中...</p>
+        </div>
+
+        <!-- Result Modal (Simple) -->
+        <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center px-4 z-50">
+            <div class="bg-white rounded-xl p-8 max-w-sm w-full text-center">
+                <div id="modal-icon" class="text-5xl mb-4"></div>
+                <h3 id="modal-title" class="text-2xl font-bold mb-2"></h3>
+                <p id="modal-body" class="text-slate-600 mb-6"></p>
+                <button id="btn-next" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold">次へ進む</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let quizzes = [];
+        let currentIndex = 0;
+        let userInput = []; // 記号の配列
+        
+        // 分数入力用ステート
+        let isFractionMode = false;
+        let fractionTarget = 'num'; // 'num' or 'den'
+        let currentNumerator = [];
+        let currentDenominator = [];
+
+        const elements = {
+            container: document.getElementById('quiz-container'),
+            status: document.getElementById('status-message'),
+            title: document.getElementById('quiz-title'),
+            desc: document.getElementById('quiz-description'),
+            progress: document.getElementById('quiz-progress'),
+            display: document.getElementById('current-formula-display'),
+            optionsGrid: document.getElementById('options-grid'),
+            btnFraction: document.getElementById('btn-fraction'),
+            fractionControls: document.getElementById('fraction-controls'),
+            btnNum: document.getElementById('btn-num'),
+            btnDen: document.getElementById('btn-den'),
+            btnSubmit: document.getElementById('btn-submit'),
+            btnClear: document.getElementById('btn-clear'),
+            modal: document.getElementById('modal'),
+            modalIcon: document.getElementById('modal-icon'),
+            modalTitle: document.getElementById('modal-title'),
+            modalBody: document.getElementById('modal-body'),
+            btnNext: document.getElementById('btn-next')
+        };
+
+        // --- Data Loading ---
+        async function loadQuizzes() {
+            try {
+                // Fetch from the generated json file
+                const response = await fetch('physics_quiz.json');
+                const data = await response.json();
+                quizzes = data.quizzes;
+                initQuiz();
+            } catch (error) {
+                elements.status.innerHTML = `<p class="text-red-500">データの読み込みに失敗しました。</p>`;
+                console.error(error);
+            }
+        }
+
+        // --- UI Logic ---
+        function initQuiz() {
+            if (currentIndex >= quizzes.length) {
+                showFinalResults();
+                return;
+            }
+
+            const quiz = quizzes[currentIndex];
+            elements.status.classList.add('hidden');
+            elements.container.classList.remove('hidden');
+            
+            elements.title.textContent = quiz.title;
+            elements.desc.textContent = quiz.description;
+            elements.progress.textContent = `${currentIndex + 1} / ${quizzes.length}`;
+            
+            resetInput();
+            renderOptions(quiz.options);
+        }
+
+        function renderOptions(options) {
+            elements.optionsGrid.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-md font-mono text-lg';
+                btn.textContent = opt;
+                btn.onclick = () => addSymbol(opt);
+                elements.optionsGrid.appendChild(btn);
+            });
+        }
+
+        function addSymbol(symbol) {
+            if (isFractionMode) {
+                if (fractionTarget === 'num') {
+                    currentNumerator.push(symbol);
+                } else {
+                    currentDenominator.push(symbol);
+                }
+            } else {
+                userInput.push(symbol);
+            }
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            let latex = buildLatexString(userInput, currentNumerator, currentDenominator, isFractionMode, fractionTarget);
+            elements.display.innerHTML = `\\[ ${latex} \\]`;
+            
+            // Re-render MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise([elements.display]);
+            }
+        }
+
+        function buildLatexString(base, num, den, fracMode, target) {
+            let str = base.join(' ');
+            if (fracMode) {
+                let nStr = num.length > 0 ? num.join('') : (target === 'num' ? '\\color{blue}{\\square}' : '\\square');
+                let dStr = den.length > 0 ? den.join('') : (target === 'den' ? '\\color{blue}{\\square}' : '\\square');
+                str += ` \\frac{${nStr}}{${dStr}} `;
+            }
+            return str;
+        }
+
+        function resetInput() {
+            userInput = [];
+            closeFractionMode();
+            updateDisplay();
+        }
+
+        function closeFractionMode() {
+            isFractionMode = false;
+            currentNumerator = [];
+            currentDenominator = [];
+            elements.fractionControls.classList.add('hidden');
+            elements.btnFraction.classList.remove('hidden');
+        }
+
+        // --- Handlers ---
+        elements.btnFraction.onclick = () => {
+            isFractionMode = true;
+            fractionTarget = 'num';
+            elements.btnFraction.classList.add('hidden');
+            elements.fractionControls.classList.remove('hidden');
+            elements.btnNum.classList.add('fraction-input-active');
+            elements.btnDen.classList.remove('fraction-input-active');
+            updateDisplay();
+        };
+
+        elements.btnNum.onclick = () => {
+            fractionTarget = 'num';
+            elements.btnNum.classList.add('fraction-input-active');
+            elements.btnDen.classList.remove('fraction-input-active');
+            updateDisplay();
+        };
+
+        elements.btnDen.onclick = () => {
+            fractionTarget = 'den';
+            elements.btnDen.classList.add('fraction-input-active');
+            elements.btnNum.classList.remove('fraction-input-active');
+            updateDisplay();
+        };
+
+        elements.btnClear.onclick = resetInput;
+
+        elements.btnSubmit.onclick = () => {
+            // 合成して判定
+            let finalFormula = userInput.join('');
+            if (currentNumerator.length > 0 || currentDenominator.length > 0) {
+                finalFormula += currentNumerator.join('') + '/' + currentDenominator.join('');
+            }
+            
+            // 正誤判定 (スペースや中括弧を無視する簡易的な正規化)
+            const quiz = quizzes[currentIndex];
+            const cleanAnswer = quiz.answer.replace(/\s/g, '').replace(/\{|\}/g, '');
+            const cleanUser = finalFormula.replace(/\s/g, '').replace(/\{|\}/g, '');
+
+            if (cleanUser === cleanAnswer) {
+                showModal(true);
+            } else {
+                showModal(false);
+            }
+        };
+
+        function showModal(isCorrect) {
+            elements.modalIcon.textContent = isCorrect ? '🎉' : '❌';
+            elements.modalTitle.textContent = isCorrect ? '正解！' : '残念...';
+            elements.modalBody.textContent = isCorrect 
+                ? '完璧です！その調子で次も頑張りましょう。' 
+                : `正解は ${quizzes[currentIndex].answer} でした。`;
+            elements.modal.classList.remove('hidden');
+        }
+
+        elements.btnNext.onclick = () => {
+            elements.modal.classList.add('hidden');
+            currentIndex++;
+            initQuiz();
+        };
+
+        function showFinalResults() {
+            elements.container.innerHTML = `
+                <div class="text-center py-8">
+                    <h2 class="text-3xl font-bold mb-4">全問終了！</h2>
+                    <p class="mb-6 text-slate-600">お疲れ様でした。これで公式マスターです。</p>
+                    <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold">
+                        最初からやり直す
+                    </button>
+                </div>
+            `;
+        }
+
+        window.onload = loadQuizzes;
+    </script>
+</body>
+</html>
