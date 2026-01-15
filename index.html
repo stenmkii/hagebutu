@@ -150,6 +150,7 @@
                 initQuiz();
             } catch (error) {
                 elements.status.innerHTML = `<p class="text-red-500 font-bold">データが見つかりません</p>`;
+                console.error(error);
             }
         }
 
@@ -325,3 +326,4 @@
     </script>
 </body>
 </html>
+
