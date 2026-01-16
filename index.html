@@ -135,7 +135,6 @@
                 initQuiz();
             } catch (e) {
                 elements.statusText.innerHTML = `<span class="text-red-500 font-bold">JSONの読み込みに失敗しました</span>`;
-                console.error(e);
             }
         }
 
@@ -166,9 +165,16 @@
             MathJax.typesetPromise([elements.optionsGrid]);
         }
 
+        /**
+         * 記号の追加ロジック
+         * モードが分数や累乗を一度経由した場合、通常モード(base)での入力はbase_post（末尾）に送る
+         */
         function addSymbol(opt) {
             if (state.mode === 'base') {
-                if (state.numerator.length > 0 || state.denominator.length > 0 || state.power.length > 0) {
+                // 分数または累乗が既に存在するか、モードが変更されたことがあるかチェック
+                const hasComplexElement = state.numerator.length > 0 || state.denominator.length > 0 || state.power.length > 0;
+                
+                if (hasComplexElement) {
                     state.base_post.push(opt.id);
                 } else {
                     state.base_pre.push(opt.id);
@@ -194,15 +200,20 @@
             const preStr = state.base_pre.map(id => getLabel(id)).join('');
             const postStr = state.base_post.map(id => getLabel(id)).join('');
             latex += preStr;
+            
+            // Power
             if (state.mode === 'pow' || state.power.length > 0) {
                 const pStr = state.power.length > 0 ? state.power.map(id => getLabel(id)).join('') : (state.mode === 'pow' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
                 latex += `^{${pStr}}`;
             }
+
+            // Fraction
             if (state.mode === 'frac' || state.numerator.length > 0 || state.denominator.length > 0) {
                 const nStr = state.numerator.length > 0 ? state.numerator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 1 ? '\\color{blue}{\\square}' : '\\square');
                 const dStr = state.denominator.length > 0 ? state.denominator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
                 latex += `\\frac{${nStr}}{${dStr}}`;
             }
+
             latex += postStr;
             elements.display.innerHTML = `\\( ${latex || '\\text{入力してください}'} \\)`;
             MathJax.typesetPromise([elements.display]);
@@ -210,11 +221,6 @@
 
         // --- 同値判定アルゴリズム ---
 
-        /**
-         * 数式を項(Term)に分割する
-         * 項は「+」か「-」で区切られた単位。
-         * 例: ["1", "minus", "cos"] -> [{sign: 1, factors: ["1"]}, {sign: -1, factors: ["cos"]}]
-         */
         function splitToTerms(ids) {
             const terms = [];
             let currentSign = 1;
@@ -235,7 +241,6 @@
                     }
                     currentSign = 1;
                 } else {
-                    // 括弧の処理などはより高度な実装が必要だが、ここでは簡易的に因子として扱う
                     currentFactors.push(id);
                 }
             }
@@ -245,22 +250,14 @@
             return terms;
         }
 
-        /**
-         * 2つの項の配列が数学的に等しいか判定する（順不同対応）
-         */
         function areTermsEquivalent(termsA, termsB) {
             if (termsA.length !== termsB.length) return false;
-
-            // 各項を正規化（因子をソートして比較可能な文字列にする）
             const normalize = (term) => ({
                 sign: term.sign,
                 key: [...term.factors].sort().join('|')
             });
-
             const normA = termsA.map(normalize);
             const normB = termsB.map(normalize);
-
-            // 項の集合として一致するか
             return normA.every(a => 
                 normB.some(b => b.sign === a.sign && b.key === a.key)
             ) && normB.every(b => 
@@ -268,21 +265,9 @@
             );
         }
 
-        /**
-         * かっこ "( ... )" を考慮した再帰的構造判定
-         */
         function getStructuralModel(ids) {
-            // かっこを見つけて中身を取り出す簡易パーサー
-            const model = {
-                mainTerms: [],
-                groups: [] // かっこ内の構造を保持
-            };
-
-            // 物理公式のパターンマッチングに特化した簡易処理
-            // lpren (1) minus (cos) rpren 
             const lpIdx = ids.indexOf('lpren');
             const rpIdx = ids.lastIndexOf('rpren');
-
             if (lpIdx !== -1 && rpIdx !== -1) {
                 const outside = [...ids.slice(0, lpIdx), ...ids.slice(rpIdx + 1)];
                 const inside = ids.slice(lpIdx + 1, rpIdx);
@@ -292,7 +277,6 @@
                     hasGroup: true
                 };
             }
-
             return {
                 outerTerms: splitToTerms(ids),
                 hasGroup: false
@@ -301,31 +285,15 @@
 
         elements.btnSubmit.onclick = () => {
             const quiz = quizzes[currentIndex];
-            const ans = quiz.answer_structure;
-
-            // ユーザー側の全入力を解析
-            const userFullIds = [...state.base_pre, ...state.base_post];
-            // 分数と累乗は別の「コンポーネント」として扱う
-            
-            const userModel = getStructuralModel(userFullIds);
-            const ansModelL = getStructuralModel(ans.left);
-            const ansModelR = getStructuralModel(ans.right);
-
-            // 簡易的な判定（右辺のみを対象にするケースが多い物理公式に合わせる）
-            // 全てのパーツを統合して比較する
-            const isMatch = checkDeepMatch(state, ans);
-            
+            const isMatch = checkDeepMatch(state, quiz.answer_structure);
             showModal(isMatch);
         };
 
         function checkDeepMatch(user, correct) {
-            // 各セグメント（ベース、分子、分母、累乗）を項分解して比較
             const compareSegment = (u, c) => {
                 if (!u && !c) return true;
-                if (!u || !c) return false;
-                const modelU = getStructuralModel(u);
-                const modelC = getStructuralModel(c);
-                
+                const modelU = getStructuralModel(u || []);
+                const modelC = getStructuralModel(c || []);
                 let ok = areTermsEquivalent(modelU.outerTerms, modelC.outerTerms);
                 if (modelC.hasGroup) {
                     ok = ok && areTermsEquivalent(modelU.innerTerms, modelC.innerTerms);
@@ -333,24 +301,13 @@
                 return ok;
             };
 
-            // 等号を無視した全IDの等価性チェック
-            // 2dsin -> [2, d, sin] は順不同でよい
-            // (1-cos) -> 1, -cos は順不同でよいが、符号は固定
-            
-            const uLeft = user.base_pre;
-            const cLeft = correct.left;
-            const cRight = correct.right;
+            const matchNormal = compareSegment(user.base_pre, correct.left) && compareSegment(user.base_post, correct.right);
+            const matchInverted = compareSegment(user.base_pre, correct.right) && compareSegment(user.base_post, correct.left);
 
-            // 左辺と右辺の入れ替えを許容
-            const matchNormal = compareSegment(user.base_pre, cLeft) && compareSegment(user.base_post, cRight);
-            const matchInverted = compareSegment(user.base_pre, cRight) && compareSegment(user.base_post, cLeft);
+            const fracOk = compareSegment(user.numerator, correct.numerator) && 
+                           compareSegment(user.denominator, correct.denominator);
+            const powOk = compareSegment(user.power, correct.power);
 
-            // 分数・累乗の判定
-            const fracOk = compareSegment(user.numerator, correct.numerator || []) && 
-                           compareSegment(user.denominator, correct.denominator || []);
-            const powOk = compareSegment(user.power, correct.power || []);
-
-            // 簡略化：全体のIDの整合性と構造の整合性をとる
             return (matchNormal || matchInverted) && fracOk && powOk;
         }
 
@@ -373,9 +330,13 @@
             elements.ctrlBase.className = mode === 'base' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
             elements.ctrlFrac.className = mode === 'frac' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
             elements.ctrlPow.className = mode === 'pow' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
-            if (mode === 'base') elements.subControls.classList.add('hidden');
-            else {
+            
+            if (mode === 'base') {
+                elements.subControls.classList.add('hidden');
+                elements.modeBadge.textContent = "通常入力モード";
+            } else {
                 elements.subControls.classList.remove('hidden');
+                elements.modeBadge.textContent = mode === 'frac' ? "分数モード" : "累乗モード";
                 updateSubTargets();
             }
             updateDisplay();
