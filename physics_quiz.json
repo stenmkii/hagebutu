@@ -12,10 +12,12 @@
         {"id": "c", "label": "c"},
         {"id": "cos", "label": "\\cos \\phi"},
         {"id": "sin", "label": "\\sin \\phi"},
-        {"id": "M", "label": "M"},
         {"id": "1", "label": "1"},
+        {"id": "lpren", "label": "("},
+        {"id": "rpren", "label": ")"},
         {"id": "minus", "label": "-"},
-        {"id": "equal", "label": "="}
+        {"id": "equal", "label": "="},
+        {"id": "div", "label": "/"}
       ],
       "answer_structure": {
         "left": ["lp", "minus", "l"],
@@ -33,8 +35,8 @@
         {"id": "v", "label": "\\nu"},
         {"id": "c", "label": "c"},
         {"id": "l", "label": "\\lambda"},
-        {"id": "f", "label": "f"},
-        {"id": "equal", "label": "="}
+        {"id": "equal", "label": "="},
+        {"id": "div", "label": "/"}
       ],
       "answer_structure": {
         "energy": ["E", "equal", "h", "v", "equal", "h", "c", "div", "l"],
@@ -44,7 +46,7 @@
     {
       "id": "compton_energy_cons",
       "title": "コンプトン散乱のエネルギー保存",
-      "description": "衝突前後の光子と電子のエネルギー保存則を完成させてください。",
+      "description": "光子と電子のエネルギー保存則を完成させてください。",
       "options": [
         {"id": "h", "label": "h"},
         {"id": "c", "label": "c"},
@@ -53,13 +55,14 @@
         {"id": "half", "label": "1/2"},
         {"id": "m", "label": "m"},
         {"id": "v", "label": "v"},
-        {"id": "2", "label": "2"},
+        {"id": "pow2", "label": "^2"},
         {"id": "plus", "label": "+"},
-        {"id": "equal", "label": "="}
+        {"id": "equal", "label": "="},
+        {"id": "div", "label": "/"}
       ],
       "answer_structure": {
         "left": ["h", "c", "div", "l"],
-        "right": ["h", "c", "div", "lp", "plus", "half", "m", "v", "pow", "2"]
+        "right": ["h", "c", "div", "lp", "plus", "half", "m", "v", "pow2"]
       }
     },
     {
@@ -83,20 +86,22 @@
     {
       "id": "rydberg_series",
       "title": "水素のスペクトル系列",
-      "description": "ライマン(a=1), バルマー(a=2), パッシェン(a=3) 各系列の波長の式を完成させてください。",
+      "description": "1/λ = R(1/a² - 1/n²) の式を完成させてください。",
       "options": [
         {"id": "l", "label": "\\lambda"},
         {"id": "R", "label": "R"},
         {"id": "a", "label": "a"},
         {"id": "n", "label": "n"},
-        {"id": "2", "label": "2"},
-        {"id": "R_inf", "label": "R_\\infty"},
+        {"id": "pow2", "label": "^2"},
+        {"id": "lpren", "label": "("},
+        {"id": "rpren", "label": ")"},
         {"id": "minus", "label": "-"},
-        {"id": "equal", "label": "="}
+        {"id": "equal", "label": "="},
+        {"id": "div", "label": "/"}
       ],
       "answer_structure": {
         "left": ["1", "div", "l"],
-        "right": ["R", "lpren", "1", "div", "a", "pow", "2", "minus", "1", "div", "n", "pow", "2", "rpren"]
+        "right": ["R", "lpren", "1", "div", "a", "pow2", "minus", "1", "div", "n", "pow2", "rpren"]
       }
     },
     {
@@ -109,7 +114,6 @@
         {"id": "r", "label": "r"},
         {"id": "n", "label": "n"},
         {"id": "l", "label": "\\lambda"},
-        {"id": "h", "label": "h"},
         {"id": "equal", "label": "="}
       ],
       "answer_structure": {
@@ -129,7 +133,8 @@
         {"id": "h", "label": "h"},
         {"id": "2", "label": "2"},
         {"id": "pi", "label": "\\pi"},
-        {"id": "equal", "label": "="}
+        {"id": "equal", "label": "="},
+        {"id": "div", "label": "/"}
       ],
       "answer_structure": {
         "left": ["m", "v", "r"],
@@ -139,13 +144,12 @@
     {
       "id": "bohr_frequency",
       "title": "ボーアの振動数条件",
-      "description": "エネルギー準位の変化と放出される光子の関係式を完成させてください。",
+      "description": "エネルギー準位の変化と光子の関係式を完成させてください。",
       "options": [
         {"id": "h", "label": "h"},
         {"id": "v", "label": "\\nu"},
         {"id": "En", "label": "E_n"},
         {"id": "Enp", "label": "E_n'"},
-        {"id": "plus", "label": "+"},
         {"id": "minus", "label": "-"},
         {"id": "equal", "label": "="}
       ],
@@ -163,13 +167,14 @@
         {"id": "k0", "label": "k_0"},
         {"id": "e", "label": "e"},
         {"id": "r", "label": "r"},
-        {"id": "2", "label": "2"},
+        {"id": "pow2", "label": "^2"},
         {"id": "G", "label": "G"},
-        {"id": "equal", "label": "="}
+        {"id": "equal", "label": "="},
+        {"id": "div", "label": "/"}
       ],
       "answer_structure": {
         "left": ["f"],
-        "right": ["k0", "e", "pow", "2", "div", "r", "pow", "2"]
+        "right": ["k0", "e", "pow2", "div", "r", "pow2"]
       }
     },
     {
@@ -182,12 +187,15 @@
         {"id": "half", "label": "1/2"},
         {"id": "t", "label": "t"},
         {"id": "T", "label": "T"},
-        {"id": "e", "label": "e"},
-        {"id": "equal", "label": "="}
+        {"id": "lpren", "label": "("},
+        {"id": "rpren", "label": ")"},
+        {"id": "exp", "label": "^"},
+        {"id": "equal", "label": "="},
+        {"id": "div", "label": "/"}
       ],
       "answer_structure": {
         "left": ["N"],
-        "right": ["N0", "lpren", "half", "rpren", "pow", "t/T"]
+        "right": ["N0", "lpren", "half", "rpren", "exp", "lpren", "t", "div", "T", "rpren"]
       }
     },
     {
@@ -198,13 +206,13 @@
         {"id": "E", "label": "E"},
         {"id": "m", "label": "m"},
         {"id": "c", "label": "c"},
-        {"id": "2", "label": "2"},
+        {"id": "pow2", "label": "^2"},
         {"id": "v", "label": "v"},
         {"id": "equal", "label": "="}
       ],
       "answer_structure": {
         "left": ["E"],
-        "right": ["m", "c", "pow", "2"]
+        "right": ["m", "c", "pow2"]
       }
     }
   ]
