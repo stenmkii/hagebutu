@@ -43,7 +43,7 @@
     <div class="max-w-2xl mx-auto px-4 py-8">
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-slate-900">物理公式パズル</h1>
-            <p class="text-slate-500 text-sm">公式の構成要素を正しく並べましょう</p>
+            <p class="text-slate-500 text-sm">項の順序は自由ですが、符号と構造は正確に。</p>
         </header>
 
         <main id="quiz-container" class="bg-white rounded-2xl shadow-xl p-6 mb-6 hidden border border-slate-100">
@@ -55,7 +55,6 @@
             <h2 id="quiz-title" class="text-xl font-bold mb-1"></h2>
             <p id="quiz-description" class="text-slate-500 text-xs mb-4"></p>
 
-            <!-- Input Area -->
             <div class="relative group">
                 <div id="current-formula-display" class="latex-display input-target-active">
                     \( \)
@@ -63,7 +62,6 @@
                 <button id="btn-clear" class="absolute top-2 right-2 text-xs bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100 font-bold">リセット</button>
             </div>
 
-            <!-- Controls -->
             <div class="grid grid-cols-3 gap-2 mb-4">
                 <button id="ctrl-base" class="bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm">通常</button>
                 <button id="ctrl-frac" class="bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm">分数</button>
@@ -79,7 +77,6 @@
                 判定する
             </button>
 
-            <!-- Options -->
             <div class="border-t border-slate-100 pt-4">
                 <div id="options-grid" class="flex flex-wrap gap-2 justify-center"></div>
             </div>
@@ -89,13 +86,11 @@
             <p id="status-text" class="text-lg">JSONファイルを読み込んでいます...</p>
         </div>
 
-        <!-- Result Modal -->
         <div id="modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center px-4 z-50">
             <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
                 <div id="modal-icon" class="text-6xl mb-4"></div>
                 <h3 id="modal-title" class="text-2xl font-bold mb-2"></h3>
                 <p id="modal-body" class="text-slate-500 mb-6"></p>
-                <div id="modal-correct-ans" class="mb-6 text-lg bg-slate-50 p-4 rounded-xl border border-slate-100"></div>
                 <button id="btn-next" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-blue-500">次へ進む</button>
             </div>
         </div>
@@ -104,16 +99,7 @@
     <script>
         let quizzes = [];
         let currentIndex = 0;
-        // 状態管理
-        let state = { 
-            base_pre: [],    // 分数/累乗より前に入力した記号
-            base_post: [],   // 分数/累乗より後に入力した記号
-            numerator: [], 
-            denominator: [], 
-            power: [], 
-            mode: 'base', 
-            target: 1 
-        };
+        let state = { base_pre: [], base_post: [], numerator: [], denominator: [], power: [], mode: 'base', target: 1 };
 
         const elements = {
             container: document.getElementById('quiz-container'),
@@ -130,7 +116,6 @@
             modalIcon: document.getElementById('modal-icon'),
             modalTitle: document.getElementById('modal-title'),
             modalBody: document.getElementById('modal-body'),
-            modalAns: document.getElementById('modal-correct-ans'),
             btnNext: document.getElementById('btn-next'),
             modeBadge: document.getElementById('input-mode-badge'),
             subControls: document.getElementById('sub-controls'),
@@ -143,27 +128,20 @@
 
         async function init() {
             try {
-                // Fetch JSON without fallback data in JS
                 const response = await fetch('physics_quiz.json');
-                if (!response.ok) throw new Error("File not found or invalid response");
+                if (!response.ok) throw new Error("File not found");
                 const data = await response.json();
                 quizzes = data.quizzes;
                 initQuiz();
             } catch (e) {
-                elements.statusText.innerHTML = `
-                    <span class="text-red-500 font-bold block mb-2">エラー: JSONファイルを読み込めませんでした。</span>
-                    <span class="text-sm text-slate-500 text-left block">
-                        ・physics_quiz.json がこのHTMLと同じフォルダにあるか確認してください。<br>
-                        ・ブラウザのセキュリティ設定により、ローカルファイルを直接開くと制限される場合があります。
-                    </span>
-                `;
+                elements.statusText.innerHTML = `<span class="text-red-500 font-bold">JSONの読み込みに失敗しました</span>`;
                 console.error(e);
             }
         }
 
         function initQuiz() {
             if (currentIndex >= quizzes.length) {
-                showFinal();
+                elements.container.innerHTML = `<div class="text-center py-12"><h2 class="text-4xl font-black mb-4">COMPLETE!</h2></div>`;
                 return;
             }
             const quiz = quizzes[currentIndex];
@@ -172,7 +150,6 @@
             elements.title.textContent = quiz.title;
             elements.desc.textContent = quiz.description;
             elements.progress.textContent = `${currentIndex + 1} / ${quizzes.length}`;
-            
             resetState();
             renderOptions(quiz.options);
         }
@@ -191,7 +168,6 @@
 
         function addSymbol(opt) {
             if (state.mode === 'base') {
-                // 特殊な入力モードが一度でも使われた後は後方に、そうでなければ前方に
                 if (state.numerator.length > 0 || state.denominator.length > 0 || state.power.length > 0) {
                     state.base_post.push(opt.id);
                 } else {
@@ -207,67 +183,207 @@
             updateDisplay();
         }
 
-        function updateDisplay() {
-            let latex = "";
-            const preStr = state.base_pre.map(id => getLabel(id)).join('');
-            const postStr = state.base_post.map(id => getLabel(id)).join('');
-            
-            latex += preStr;
-
-            // Power
-            if (state.mode === 'pow' || state.power.length > 0) {
-                const pStr = state.power.length > 0 ? state.power.map(id => getLabel(id)).join('') : (state.mode === 'pow' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
-                latex += `^{${pStr}}`;
-            }
-
-            // Fraction
-            if (state.mode === 'frac' || state.numerator.length > 0 || state.denominator.length > 0) {
-                const nStr = state.numerator.length > 0 ? state.numerator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 1 ? '\\color{blue}{\\square}' : '\\square');
-                const dStr = state.denominator.length > 0 ? state.denominator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
-                latex += `\\frac{${nStr}}{${dStr}}`;
-            }
-
-            latex += postStr;
-
-            elements.display.innerHTML = `\\( ${latex || '\\text{入力してください}'} \\)`;
-            MathJax.typesetPromise([elements.display]);
-        }
-
         function getLabel(id) {
             const quiz = quizzes[currentIndex];
             const opt = quiz.options.find(o => o.id === id);
             return opt ? opt.label : id;
         }
 
+        function updateDisplay() {
+            let latex = "";
+            const preStr = state.base_pre.map(id => getLabel(id)).join('');
+            const postStr = state.base_post.map(id => getLabel(id)).join('');
+            latex += preStr;
+            if (state.mode === 'pow' || state.power.length > 0) {
+                const pStr = state.power.length > 0 ? state.power.map(id => getLabel(id)).join('') : (state.mode === 'pow' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
+                latex += `^{${pStr}}`;
+            }
+            if (state.mode === 'frac' || state.numerator.length > 0 || state.denominator.length > 0) {
+                const nStr = state.numerator.length > 0 ? state.numerator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 1 ? '\\color{blue}{\\square}' : '\\square');
+                const dStr = state.denominator.length > 0 ? state.denominator.map(id => getLabel(id)).join('') : (state.mode === 'frac' && state.target === 2 ? '\\color{blue}{\\square}' : '\\square');
+                latex += `\\frac{${nStr}}{${dStr}}`;
+            }
+            latex += postStr;
+            elements.display.innerHTML = `\\( ${latex || '\\text{入力してください}'} \\)`;
+            MathJax.typesetPromise([elements.display]);
+        }
+
+        // --- 同値判定アルゴリズム ---
+
+        /**
+         * 数式を項(Term)に分割する
+         * 項は「+」か「-」で区切られた単位。
+         * 例: ["1", "minus", "cos"] -> [{sign: 1, factors: ["1"]}, {sign: -1, factors: ["cos"]}]
+         */
+        function splitToTerms(ids) {
+            const terms = [];
+            let currentSign = 1;
+            let currentFactors = [];
+
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                if (id === 'minus') {
+                    if (currentFactors.length > 0) {
+                        terms.push({ sign: currentSign, factors: [...currentFactors] });
+                        currentFactors = [];
+                    }
+                    currentSign = -1;
+                } else if (id === 'plus') {
+                    if (currentFactors.length > 0) {
+                        terms.push({ sign: currentSign, factors: [...currentFactors] });
+                        currentFactors = [];
+                    }
+                    currentSign = 1;
+                } else {
+                    // 括弧の処理などはより高度な実装が必要だが、ここでは簡易的に因子として扱う
+                    currentFactors.push(id);
+                }
+            }
+            if (currentFactors.length > 0) {
+                terms.push({ sign: currentSign, factors: currentFactors });
+            }
+            return terms;
+        }
+
+        /**
+         * 2つの項の配列が数学的に等しいか判定する（順不同対応）
+         */
+        function areTermsEquivalent(termsA, termsB) {
+            if (termsA.length !== termsB.length) return false;
+
+            // 各項を正規化（因子をソートして比較可能な文字列にする）
+            const normalize = (term) => ({
+                sign: term.sign,
+                key: [...term.factors].sort().join('|')
+            });
+
+            const normA = termsA.map(normalize);
+            const normB = termsB.map(normalize);
+
+            // 項の集合として一致するか
+            return normA.every(a => 
+                normB.some(b => b.sign === a.sign && b.key === a.key)
+            ) && normB.every(b => 
+                normA.some(a => a.sign === b.sign && a.key === b.key)
+            );
+        }
+
+        /**
+         * かっこ "( ... )" を考慮した再帰的構造判定
+         */
+        function getStructuralModel(ids) {
+            // かっこを見つけて中身を取り出す簡易パーサー
+            const model = {
+                mainTerms: [],
+                groups: [] // かっこ内の構造を保持
+            };
+
+            // 物理公式のパターンマッチングに特化した簡易処理
+            // lpren (1) minus (cos) rpren 
+            const lpIdx = ids.indexOf('lpren');
+            const rpIdx = ids.lastIndexOf('rpren');
+
+            if (lpIdx !== -1 && rpIdx !== -1) {
+                const outside = [...ids.slice(0, lpIdx), ...ids.slice(rpIdx + 1)];
+                const inside = ids.slice(lpIdx + 1, rpIdx);
+                return {
+                    outerTerms: splitToTerms(outside),
+                    innerTerms: splitToTerms(inside),
+                    hasGroup: true
+                };
+            }
+
+            return {
+                outerTerms: splitToTerms(ids),
+                hasGroup: false
+            };
+        }
+
+        elements.btnSubmit.onclick = () => {
+            const quiz = quizzes[currentIndex];
+            const ans = quiz.answer_structure;
+
+            // ユーザー側の全入力を解析
+            const userFullIds = [...state.base_pre, ...state.base_post];
+            // 分数と累乗は別の「コンポーネント」として扱う
+            
+            const userModel = getStructuralModel(userFullIds);
+            const ansModelL = getStructuralModel(ans.left);
+            const ansModelR = getStructuralModel(ans.right);
+
+            // 簡易的な判定（右辺のみを対象にするケースが多い物理公式に合わせる）
+            // 全てのパーツを統合して比較する
+            const isMatch = checkDeepMatch(state, ans);
+            
+            showModal(isMatch);
+        };
+
+        function checkDeepMatch(user, correct) {
+            // 各セグメント（ベース、分子、分母、累乗）を項分解して比較
+            const compareSegment = (u, c) => {
+                if (!u && !c) return true;
+                if (!u || !c) return false;
+                const modelU = getStructuralModel(u);
+                const modelC = getStructuralModel(c);
+                
+                let ok = areTermsEquivalent(modelU.outerTerms, modelC.outerTerms);
+                if (modelC.hasGroup) {
+                    ok = ok && areTermsEquivalent(modelU.innerTerms, modelC.innerTerms);
+                }
+                return ok;
+            };
+
+            // 等号を無視した全IDの等価性チェック
+            // 2dsin -> [2, d, sin] は順不同でよい
+            // (1-cos) -> 1, -cos は順不同でよいが、符号は固定
+            
+            const uLeft = user.base_pre;
+            const cLeft = correct.left;
+            const cRight = correct.right;
+
+            // 左辺と右辺の入れ替えを許容
+            const matchNormal = compareSegment(user.base_pre, cLeft) && compareSegment(user.base_post, cRight);
+            const matchInverted = compareSegment(user.base_pre, cRight) && compareSegment(user.base_post, cLeft);
+
+            // 分数・累乗の判定
+            const fracOk = compareSegment(user.numerator, correct.numerator || []) && 
+                           compareSegment(user.denominator, correct.denominator || []);
+            const powOk = compareSegment(user.power, correct.power || []);
+
+            // 簡略化：全体のIDの整合性と構造の整合性をとる
+            return (matchNormal || matchInverted) && fracOk && powOk;
+        }
+
+        function showModal(isCorrect) {
+            elements.modalIcon.textContent = isCorrect ? '✨' : '⚠️';
+            elements.modalTitle.textContent = isCorrect ? '正解！' : '不正解';
+            elements.modalBody.textContent = isCorrect ? '公式の構造が正しく理解されています。' : '符号や括弧の中身を確認してください。';
+            elements.modal.classList.remove('hidden');
+        }
+
+        function resetState() {
+            state = { base_pre: [], base_post: [], numerator: [], denominator: [], power: [], mode: 'base', target: 1 };
+            setMode('base');
+            updateDisplay();
+        }
+
         function setMode(mode) {
             state.mode = mode;
             state.target = 1;
-            
-            const activeClass = "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
-            const inactiveClass = "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
-            
-            elements.ctrlBase.className = mode === 'base' ? activeClass : inactiveClass;
-            elements.ctrlFrac.className = mode === 'frac' ? activeClass : inactiveClass;
-            elements.ctrlPow.className = mode === 'pow' ? activeClass : inactiveClass;
-
-            if (mode === 'base') {
-                elements.subControls.classList.add('hidden');
-                elements.modeBadge.textContent = "通常入力モード";
-            } else {
+            elements.ctrlBase.className = mode === 'base' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
+            elements.ctrlFrac.className = mode === 'frac' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
+            elements.ctrlPow.className = mode === 'pow' ? "bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm" : "bg-slate-800 text-white py-2 rounded-lg text-sm font-bold shadow-sm";
+            if (mode === 'base') elements.subControls.classList.add('hidden');
+            else {
                 elements.subControls.classList.remove('hidden');
-                elements.modeBadge.textContent = mode === 'frac' ? "分数モード" : "累乗モード";
-                elements.btnT1.textContent = mode === 'frac' ? "分子へ" : "ベースへ";
-                elements.btnT2.textContent = mode === 'frac' ? "分母へ" : "指数へ";
                 updateSubTargets();
             }
             updateDisplay();
         }
 
         function updateSubTargets() {
-            const activeSub = "bg-blue-500 text-white py-2 rounded-lg text-xs font-bold border-2 border-blue-300 shadow-inner";
-            const inactiveSub = "bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-bold border-2 border-transparent";
-            elements.btnT1.className = state.target === 1 ? activeSub : inactiveSub;
-            elements.btnT2.className = state.target === 2 ? activeSub : inactiveSub;
+            elements.btnT1.className = state.target === 1 ? "bg-blue-500 text-white py-2 rounded-lg text-xs font-bold border-2 border-blue-300 shadow-inner" : "bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-bold border-2 border-transparent";
+            elements.btnT2.className = state.target === 2 ? "bg-blue-500 text-white py-2 rounded-lg text-xs font-bold border-2 border-blue-300 shadow-inner" : "bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-bold border-2 border-transparent";
         }
 
         elements.ctrlBase.onclick = () => setMode('base');
@@ -276,57 +392,7 @@
         elements.btnT1.onclick = () => { state.target = 1; updateSubTargets(); updateDisplay(); };
         elements.btnT2.onclick = () => { state.target = 2; updateSubTargets(); updateDisplay(); };
         elements.btnClear.onclick = resetState;
-
-        function resetState() {
-            state = { base_pre: [], base_post: [], numerator: [], denominator: [], power: [], mode: 'base', target: 1 };
-            setMode('base');
-            updateDisplay();
-        }
-
-        elements.btnSubmit.onclick = () => {
-            const quiz = quizzes[currentIndex];
-            const ans = quiz.answer_structure;
-            
-            // ユーザー入力を単一配列にマージ（判定用）
-            const userIDs = [
-                ...state.base_pre, 
-                ...state.numerator, 
-                ...state.denominator, 
-                ...state.power,
-                ...state.base_post
-            ].filter(id => id !== 'equal').sort();
-
-            // 正解のIDをマージ
-            const correctIDs = [
-                ...ans.left, 
-                ...ans.right
-            ].filter(id => id !== 'div' && id !== 'pow' && id !== 'equal').sort();
-
-            const isCorrect = JSON.stringify(userIDs) === JSON.stringify(correctIDs);
-            showModal(isCorrect);
-        };
-
-        function showModal(isCorrect) {
-            elements.modalIcon.textContent = isCorrect ? '✨' : '⚠️';
-            elements.modalTitle.textContent = isCorrect ? '正解！' : '惜しい！';
-            elements.modalBody.textContent = isCorrect ? '素晴らしい理解度です。' : '記号の不足や、位置が正しいか確認しましょう。';
-            
-            // 正解ラベルの構築（簡易）
-            const quiz = quizzes[currentIndex];
-            elements.modalAns.innerHTML = `公式の確認を完了しました`;
-            
-            elements.modal.classList.remove('hidden');
-        }
-
-        elements.btnNext.onclick = () => {
-            elements.modal.classList.add('hidden');
-            currentIndex++;
-            initQuiz();
-        };
-
-        function showFinal() {
-            elements.container.innerHTML = `<div class="text-center py-12"><h2 class="text-4xl font-black mb-4">全問クリア！</h2><button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg">もう一度挑戦</button></div>`;
-        }
+        elements.btnNext.onclick = () => { elements.modal.classList.add('hidden'); currentIndex++; initQuiz(); };
 
         init();
     </script>
