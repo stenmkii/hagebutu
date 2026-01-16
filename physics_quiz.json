@@ -1,180 +1,203 @@
 {
   "quizzes": [
     {
-      "id": "compton_wavelength",
+      "id": "compton_shift",
       "title": "コンプトン効果（波長変化）",
       "description": "散乱光の波長変化を表す公式を完成させてください。",
       "options": [
-        {"id": "lp", "label": "\\lambda'"},
-        {"id": "l", "label": "\\lambda"},
-        {"id": "h", "label": "h"},
-        {"id": "m", "label": "m"},
-        {"id": "c", "label": "c"},
-        {"id": "cos", "label": "\\cos \\phi"},
-        {"id": "sin", "label": "\\sin \\phi"},
-        {"id": "1", "label": "1"},
-        {"id": "lpren", "label": "("},
-        {"id": "rpren", "label": ")"},
-        {"id": "minus", "label": "-"},
-        {"id": "equal", "label": "="},
-        {"id": "div", "label": "/"}
+        { "id": "lp", "label": "\\lambda'" },
+        { "id": "l", "label": "\\lambda" },
+        { "id": "h", "label": "h" },
+        { "id": "m", "label": "m" },
+        { "id": "c", "label": "c" },
+        { "id": "1", "label": "1" },
+        { "id": "minus", "label": "-" },
+        { "id": "cos", "label": "\\cos" },
+        { "id": "phi", "label": "\\phi" },
+        { "id": "lpren", "label": "(" },
+        { "id": "rpren", "label": ")" },
+        { "id": "sin", "label": "\\sin" },
+        { "id": "M", "label": "M" }
       ],
       "answer_structure": {
         "left": ["lp", "minus", "l"],
-        "right": ["h", "div", "m", "c", "lpren", "1", "minus", "cos", "rpren"]
+        "right": ["lpren", "1", "minus", "cos", "phi", "rpren"],
+        "numerator": ["h"],
+        "denominator": ["m", "c"]
       }
     },
     {
-      "id": "photon_energy_momentum",
-      "title": "光子のエネルギーと運動量",
-      "description": "光子のエネルギー E と運動量 p の式を完成させてください。",
+      "id": "photon_energy",
+      "title": "光子のエネルギー",
+      "description": "光子のエネルギー E と波長 λ の関係式を完成させてください。",
       "options": [
-        {"id": "E", "label": "E"},
-        {"id": "p", "label": "p"},
-        {"id": "h", "label": "h"},
-        {"id": "v", "label": "\\nu"},
-        {"id": "c", "label": "c"},
-        {"id": "l", "label": "\\lambda"},
-        {"id": "equal", "label": "="},
-        {"id": "div", "label": "/"}
+        { "id": "E", "label": "E" },
+        { "id": "h", "label": "h" },
+        { "id": "c", "label": "c" },
+        { "id": "lambda", "label": "\\lambda" },
+        { "id": "v", "label": "v" },
+        { "id": "f", "label": "f" }
       ],
       "answer_structure": {
-        "energy": ["E", "equal", "h", "v", "equal", "h", "c", "div", "l"],
-        "momentum": ["p", "equal", "h", "div", "l"]
+        "left": ["E"],
+        "numerator": ["h", "c"],
+        "denominator": ["lambda"]
       }
     },
     {
-      "id": "compton_energy_cons",
-      "title": "コンプトン散乱のエネルギー保存",
-      "description": "光子と電子のエネルギー保存則を完成させてください。",
+      "id": "photon_momentum",
+      "title": "光子の運動量",
+      "description": "光子の運動量 p を表す式を完成させてください。",
       "options": [
-        {"id": "h", "label": "h"},
-        {"id": "c", "label": "c"},
-        {"id": "l", "label": "\\lambda"},
-        {"id": "lp", "label": "\\lambda'"},
-        {"id": "half", "label": "1/2"},
-        {"id": "m", "label": "m"},
-        {"id": "v", "label": "v"},
-        {"id": "pow2", "label": "^2"},
-        {"id": "plus", "label": "+"},
-        {"id": "equal", "label": "="},
-        {"id": "div", "label": "/"}
+        { "id": "p", "label": "p" },
+        { "id": "h", "label": "h" },
+        { "id": "lambda", "label": "\\lambda" },
+        { "id": "c", "label": "c" },
+        { "id": "m", "label": "m" }
+      ],
+      "answer_structure": {
+        "left": ["p"],
+        "numerator": ["h"],
+        "denominator": ["lambda"]
+      }
+    },
+    {
+      "id": "compton_energy_conservation",
+      "title": "コンプトン散乱のエネルギー保存",
+      "description": "衝突前後の光子と電子のエネルギー保存則を完成させてください。",
+      "options": [
+        { "id": "h", "label": "h" },
+        { "id": "c", "label": "c" },
+        { "id": "l", "label": "\\lambda" },
+        { "id": "lp", "label": "\\lambda'" },
+        { "id": "m", "label": "m" },
+        { "id": "v", "label": "v" },
+        { "id": "plus", "label": "+" },
+        { "id": "1", "label": "1" },
+        { "id": "2", "label": "2" }
       ],
       "answer_structure": {
         "left": ["h", "c", "div", "l"],
-        "right": ["h", "c", "div", "lp", "plus", "half", "m", "v", "pow2"]
+        "right": ["h", "c", "div", "lp", "plus", "kinetic_energy"],
+        "kinetic_energy": {
+          "numerator": ["1", "m"],
+          "denominator": ["2"],
+          "right": ["v"],
+          "power": ["2"]
+        }
       }
     },
     {
-      "id": "bragg_reflection",
+      "id": "bragg_condition",
       "title": "ブラッグの反射条件",
-      "description": "結晶格子によるX線回折の条件式を完成させてください。",
+      "description": "X線回折における強め合いの条件式を完成させてください。",
       "options": [
-        {"id": "2", "label": "2"},
-        {"id": "d", "label": "d"},
-        {"id": "sin", "label": "\\sin \\theta"},
-        {"id": "cos", "label": "\\cos \\theta"},
-        {"id": "n", "label": "n"},
-        {"id": "l", "label": "\\lambda"},
-        {"id": "equal", "label": "="}
+        { "id": "2", "label": "2" },
+        { "id": "d", "label": "d" },
+        { "id": "sin", "label": "\\sin" },
+        { "id": "theta", "label": "\\theta" },
+        { "id": "n", "label": "n" },
+        { "id": "lambda", "label": "\\lambda" },
+        { "id": "cos", "label": "\\cos" }
       ],
       "answer_structure": {
-        "left": ["2", "d", "sin"],
-        "right": ["n", "l"]
+        "left": ["2", "d", "sin", "theta"],
+        "right": ["n", "lambda"]
       }
     },
     {
-      "id": "rydberg_series",
-      "title": "水素のスペクトル系列",
-      "description": "1/λ = R(1/a² - 1/n²) の式を完成させてください。",
+      "id": "rydberg_formula",
+      "title": "リュードベリの公式",
+      "description": "水素原子のスペクトル系列の式を完成させてください。",
       "options": [
-        {"id": "l", "label": "\\lambda"},
-        {"id": "R", "label": "R"},
-        {"id": "a", "label": "a"},
-        {"id": "n", "label": "n"},
-        {"id": "pow2", "label": "^2"},
-        {"id": "lpren", "label": "("},
-        {"id": "rpren", "label": ")"},
-        {"id": "minus", "label": "-"},
-        {"id": "equal", "label": "="},
-        {"id": "div", "label": "/"}
+        { "id": "lambda", "label": "\\lambda" },
+        { "id": "R", "label": "R" },
+        { "id": "a", "label": "a" },
+        { "id": "n", "label": "n" },
+        { "id": "1", "label": "1" },
+        { "id": "minus", "label": "-" },
+        { "id": "lpren", "label": "(" },
+        { "id": "rpren", "label": ")" },
+        { "id": "2", "label": "2" }
       ],
       "answer_structure": {
-        "left": ["1", "div", "l"],
-        "right": ["R", "lpren", "1", "div", "a", "pow2", "minus", "1", "div", "n", "pow2", "rpren"]
+        "left": { "numerator": ["1"], "denominator": ["lambda"] },
+        "right": ["R", "lpren", "term_a", "minus", "term_n", "rpren"],
+        "term_a": { "numerator": ["1"], "denominator": ["a"], "power": ["2"] },
+        "term_n": { "numerator": ["1"], "denominator": ["n"], "power": ["2"] }
       }
     },
     {
-      "id": "bohr_quantum_1",
+      "id": "bohr_quantum_lambda",
       "title": "ボーアの量子条件 (1)",
-      "description": "円軌道の長さと物質波の関係式を完成させてください。",
+      "description": "軌道長と波長の関係式を完成させてください。",
       "options": [
-        {"id": "2", "label": "2"},
-        {"id": "pi", "label": "\\pi"},
-        {"id": "r", "label": "r"},
-        {"id": "n", "label": "n"},
-        {"id": "l", "label": "\\lambda"},
-        {"id": "equal", "label": "="}
+        { "id": "2", "label": "2" },
+        { "id": "pi", "label": "\\pi" },
+        { "id": "r", "label": "r" },
+        { "id": "n", "label": "n" },
+        { "id": "lambda", "label": "\\lambda" },
+        { "id": "h", "label": "h" }
       ],
       "answer_structure": {
         "left": ["2", "pi", "r"],
-        "right": ["n", "l"]
+        "right": ["n", "lambda"]
       }
     },
     {
-      "id": "bohr_quantum_2",
+      "id": "bohr_angular_momentum",
       "title": "ボーアの量子条件 (2)",
       "description": "角運動量の量子化に関する式を完成させてください。",
       "options": [
-        {"id": "m", "label": "m"},
-        {"id": "v", "label": "v"},
-        {"id": "r", "label": "r"},
-        {"id": "n", "label": "n"},
-        {"id": "h", "label": "h"},
-        {"id": "2", "label": "2"},
-        {"id": "pi", "label": "\\pi"},
-        {"id": "equal", "label": "="},
-        {"id": "div", "label": "/"}
+        { "id": "m", "label": "m" },
+        { "id": "v", "label": "v" },
+        { "id": "r", "label": "r" },
+        { "id": "n", "label": "n" },
+        { "id": "h", "label": "h" },
+        { "id": "2", "label": "2" },
+        { "id": "pi", "label": "\\pi" }
       ],
       "answer_structure": {
         "left": ["m", "v", "r"],
-        "right": ["n", "h", "div", "2", "pi"]
+        "numerator": ["n", "h"],
+        "denominator": ["2", "pi"]
       }
     },
     {
-      "id": "bohr_frequency",
+      "id": "bohr_frequency_condition",
       "title": "ボーアの振動数条件",
-      "description": "エネルギー準位の変化と光子の関係式を完成させてください。",
+      "description": "エネルギー準位の遷移と光子の関係式を完成させてください。",
       "options": [
-        {"id": "h", "label": "h"},
-        {"id": "v", "label": "\\nu"},
-        {"id": "En", "label": "E_n"},
-        {"id": "Enp", "label": "E_n'"},
-        {"id": "minus", "label": "-"},
-        {"id": "equal", "label": "="}
+        { "id": "h", "label": "h" },
+        { "id": "nu", "label": "\\nu" },
+        { "id": "En", "label": "E_n" },
+        { "id": "Enp", "label": "E_n'" },
+        { "id": "minus", "label": "-" },
+        { "id": "plus", "label": "+" }
       ],
       "answer_structure": {
-        "left": ["h", "v"],
+        "left": ["h", "nu"],
         "right": ["En", "minus", "Enp"]
       }
     },
     {
       "id": "electrostatic_force",
-      "title": "静電気力",
-      "description": "電荷の間に働く力の式を完成させてください。",
+      "title": "静電気力（クーロン力）",
+      "description": "水素原子核と電子の間に働く力の式を完成させてください。",
       "options": [
-        {"id": "f", "label": "f"},
-        {"id": "k0", "label": "k_0"},
-        {"id": "e", "label": "e"},
-        {"id": "r", "label": "r"},
-        {"id": "pow2", "label": "^2"},
-        {"id": "G", "label": "G"},
-        {"id": "equal", "label": "="},
-        {"id": "div", "label": "/"}
+        { "id": "f", "label": "f" },
+        { "id": "k0", "label": "k_0" },
+        { "id": "e", "label": "e" },
+        { "id": "r", "label": "r" },
+        { "id": "2", "label": "2" },
+        { "id": "G", "label": "G" }
       ],
       "answer_structure": {
         "left": ["f"],
-        "right": ["k0", "e", "pow2", "div", "r", "pow2"]
+        "right": ["k0"],
+        "numerator": ["e"],
+        "denominator": ["r"],
+        "power": ["2"]
       }
     },
     {
@@ -182,37 +205,38 @@
       "title": "半減期",
       "description": "原子核の残存数 N を表す公式を完成させてください。",
       "options": [
-        {"id": "N", "label": "N"},
-        {"id": "N0", "label": "N_0"},
-        {"id": "half", "label": "1/2"},
-        {"id": "t", "label": "t"},
-        {"id": "T", "label": "T"},
-        {"id": "lpren", "label": "("},
-        {"id": "rpren", "label": ")"},
-        {"id": "exp", "label": "^"},
-        {"id": "equal", "label": "="},
-        {"id": "div", "label": "/"}
+        { "id": "N", "label": "N" },
+        { "id": "N0", "label": "N_0" },
+        { "id": "1", "label": "1" },
+        { "id": "2", "label": "2" },
+        { "id": "t", "label": "t" },
+        { "id": "T", "label": "T" },
+        { "id": "lpren", "label": "(" },
+        { "id": "rpren", "label": ")" },
+        { "id": "exp", "label": "e" }
       ],
       "answer_structure": {
         "left": ["N"],
-        "right": ["N0", "lpren", "half", "rpren", "exp", "lpren", "t", "div", "T", "rpren"]
+        "right": ["N0", "lpren", "base", "rpren"],
+        "base": { "numerator": ["1"], "denominator": ["2"] },
+        "power": { "numerator": ["t"], "denominator": ["T"] }
       }
     },
     {
       "id": "relativity_energy",
       "title": "特殊相対性理論",
-      "description": "静止エネルギーの式を完成させてください。",
+      "description": "質量とエネルギーの等価性の式を完成させてください。",
       "options": [
-        {"id": "E", "label": "E"},
-        {"id": "m", "label": "m"},
-        {"id": "c", "label": "c"},
-        {"id": "pow2", "label": "^2"},
-        {"id": "v", "label": "v"},
-        {"id": "equal", "label": "="}
+        { "id": "E", "label": "E" },
+        { "id": "m", "label": "m" },
+        { "id": "c", "label": "c" },
+        { "id": "2", "label": "2" },
+        { "id": "v", "label": "v" }
       ],
       "answer_structure": {
         "left": ["E"],
-        "right": ["m", "c", "pow2"]
+        "right": ["m", "c"],
+        "power": ["2"]
       }
     }
   ]
